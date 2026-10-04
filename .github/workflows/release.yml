@@ -1,0 +1,29 @@
+name: Release IPA
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  ipa:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version-file: pubspec.yaml
+          cache: true
+
+      - name: Build unsigned IPA
+        run: bash scripts/build_unsigned_ipa.sh "$GITHUB_REF_NAME"
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: build/ipa/*.ipa
