@@ -57,7 +57,7 @@ Một app iOS cá nhân (Flutter, kiến trúc BLoC) cho phép:
 
 | Ràng buộc | Hệ quả trong thiết kế |
 |---|---|
-| Không có Mac | Build iOS chỉ trên CI (macOS runner). Dev hàng ngày trên Windows desktop với `FAKE_SOURCES=true`. Không có Xcode console → cần nhật ký lỗi trong app. |
+| Không có Mac | Build iOS chỉ trên CI (macOS runner). Dev: `flutter test`/`analyze` trên Windows; chạy thử trên iPhone thật bằng **ios-builder + MobAI** (build qua GitHub Actions, hot reload qua USB). Không dùng target Windows desktop. Không có Xcode console → cần nhật ký lỗi trong app. |
 | Apple ID miễn phí | IPA build **không ký**, SideStore ký lại trên máy. Hết hạn 7 ngày → SideStore tự gia hạn + thông báo trong app. Tối đa 3 app sideload (SideStore chiếm 1). Không dùng App Group / Share Extension trong v1. |
 | Spotify không cho lấy luồng audio | Bài Spotify phát bằng **app Spotify** thông qua Spotify iOS SDK (App Remote). Cần app Spotify đã cài + Premium. |
 | iOS suspend app nền không phát âm thanh | Khi bài Spotify đang phát, app phát **audio im lặng (mixWithOthers)** để giữ app sống và tự chuyển sang bài kế tiếp. |
@@ -330,7 +330,7 @@ Chi tiết token, font, icon, motion và checklist: [`design-system/multi-musics
 | Live (`@Tags(['live'])`) | mạng thật | YouTube resolve 1 video ổn định, SoundCloud lấy client_id + resolve 1 track, oEmbed 3 nguồn. Không chạy trong `ci.yml`. |
 | Thủ công trên iPhone | `docs/manual-test-checklist.md` | phát nền tắt màn hình qua 3 nguồn; màn hình khóa/Control Center/AirPods; cuộc gọi; Siri; chỉ đường; rút tai nghe; Spotify kết nối/mất kết nối/fallback; thông báo hết hạn; quyền dán |
 
-Dev trên Windows: `flutter run -d windows --dart-define=FAKE_SOURCES=true` → dùng `lib/fakes/` (engine giả mô phỏng tiến độ phát, resolver giả, seed ~20 bài + 3 playlist). `flutter test` chạy được trên Windows (cần `sqlite3.dll` cho drift test — dùng `sqlite3_flutter_libs`/hướng dẫn trong README).
+Dev: `flutter test` chạy trên Windows (cần `sqlite3.dll` cho drift test — hướng dẫn trong README). Chạy thử trên iPhone bằng ios-builder + MobAI (hot reload qua USB). `--dart-define=FAKE_SOURCES=true` → dùng `lib/fakes/` (engine giả mô phỏng tiến độ phát, resolver giả, seed ~20 bài + 3 playlist) cho widget/smoke test và để thử UI trên máy khi cần.
 
 ## 11. CI/CD & phân phối
 

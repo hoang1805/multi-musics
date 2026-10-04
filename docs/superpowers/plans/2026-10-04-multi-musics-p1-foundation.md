@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** App Flutter chạy được trên Windows (dữ liệu thật + chế độ demo) và cài được lên iPhone qua SideStore: dán link → thêm bài vào thư viện → tạo và sắp xếp playlist trộn nguồn. Chưa phát nhạc.
+**Goal:** App Flutter iOS (test chạy trên Windows, thử trên iPhone qua ios-builder + MobAI) cài được lên iPhone qua SideStore: dán link → thêm bài vào thư viện → tạo và sắp xếp playlist trộn nguồn. Chưa phát nhạc.
 
 **Architecture:** Kiến trúc BLoC (event-driven `Bloc`) theo các tầng UI → Bloc → Repository/Service. Dữ liệu lưu bằng drift/SQLite, dùng trực tiếp data class mà drift sinh ra làm model. Link được nhận diện bởi `LinkParser`, metadata lấy qua oEmbed, cả hai đều sau interface để có bản fake. CI chạy trên GitHub Actions (Ubuntu). IPA chưa ký được build trên GitHub Actions (macOS), có Codemagic dự phòng.
 
@@ -45,7 +45,7 @@
 ### Task 1: Môi trường, khung dự án, các kiểu lõi, CI
 
 **Files:**
-- Create: (bằng `flutter create`) `pubspec.yaml`, `lib/main.dart`, `ios/`, `windows/`
+- Create: (bằng `flutter create`) `pubspec.yaml`, `lib/main.dart`, `ios/`
 - Create: `analysis_options.yaml`, `dart_test.yaml`, `.gitignore` (bổ sung), `README.md`
 - Create: `lib/core/result.dart`, `lib/core/failure.dart`, `lib/sources/source_type.dart`
 - Create: `.github/workflows/ci.yml`
@@ -69,12 +69,12 @@
     - `SpotifyDisconnected()`: "Mất kết nối với Spotify."
     - `UnknownFailure(Object error, [StackTrace? stackTrace])`: "Đã có lỗi xảy ra."
 
-- [ ] **Step 1: Cài Flutter SDK trên Windows** (hỏi người dùng trước khi tải và cài). Tải bản Flutter stable mới nhất, giải nén vào `C:\dev\flutter`, thêm `C:\dev\flutter\bin` vào PATH của user. Cài Visual Studio 2022 với workload "Desktop development with C++" (cần để chạy `-d windows`).
+- [ ] **Step 1: Cài Flutter SDK trên Windows** (hỏi người dùng trước khi tải và cài). Tải bản Flutter stable mới nhất, giải nén vào `C:\dev\flutter`, thêm `C:\dev\flutter\bin` vào PATH của user. **Không** cài Visual Studio (không dùng target Windows desktop).
   Run: `flutter doctor -v`
-  Expected: dòng `Flutter` và `Visual Studio` có ✓. Các mục Android, Xcode, Chrome báo lỗi thì bỏ qua.
+  Expected: dòng `Flutter` có ✓. Các mục Android, Xcode, Chrome, Visual Studio báo lỗi thì bỏ qua.
 
 - [ ] **Step 2: Tạo dự án**
-  Run: `flutter create --org dev.multimusics --project-name multi_musics --platforms ios,windows .`
+  Run: `flutter create --org dev.multimusics --project-name multi_musics --platforms ios .`
   Sau đó thêm vào `pubspec.yaml` mục `environment: flutter: "<phiên bản đúng như `flutter --version` in ra>"` (CI đọc phiên bản từ đây). Xóa `test/widget_test.dart`.
 
 - [ ] **Step 3: Thêm dependencies**
@@ -94,7 +94,7 @@
 
 - [ ] **Step 7: Viết `.github/workflows/ci.yml`.** Trigger `push`, `pull_request`. Runner `ubuntu-latest`. Các bước: `actions/checkout@v4` → `sudo apt-get update && sudo apt-get install -y libsqlite3-dev` → `subosito/flutter-action@v2` (`channel: stable`, `flutter-version-file: pubspec.yaml`, `cache: true`) → `flutter pub get` → `dart run build_runner build -d` → `flutter analyze` → `flutter test --exclude-tags live`.
 
-- [ ] **Step 8: README.md**, gồm các mục: yêu cầu (Flutter, VS C++), lệnh chạy desktop `flutter run -d windows --dart-define=FAKE_SOURCES=true`, lệnh test, lệnh codegen, và đường dẫn tới spec.
+- [ ] **Step 8: README.md**, gồm các mục: yêu cầu (Flutter SDK), lệnh test, lệnh codegen, và đường dẫn tới spec.
 
 - [ ] **Step 9: Kiểm tra.** Run: `flutter analyze && flutter test --exclude-tags live`. Expected: `No issues found!` và `All tests passed!`
 
@@ -132,7 +132,7 @@
 - [ ] **Step 4: Chạy test, thấy PASS.**
 
 - [ ] **Step 5: Viết `main.dart`**, bọc toàn bộ trong `runZonedGuarded`. Mở logger tại `getApplicationSupportDirectory()/logs.txt`. Gán `FlutterError.onError` và `PlatformDispatcher.instance.onError` để gọi `logger.error('crash', …)`. `WidgetsBinding` lắng nghe `AppLifecycleState.paused` thì gọi `flush()`. Tạm thời `runApp` một `MaterialApp` placeholder, Task 13 sẽ thay.
-  Run: `flutter run -d windows`. Expected: app mở ra, file `logs.txt` được tạo trong thư mục app support.
+  Run: `flutter analyze`. Expected: `No issues found!` (chạy thật trên máy được kiểm ở Task 14).
 
 - [ ] **Step 6: Commit.** `git commit -am "feat: add AppLogger with crash hooks"` (nhớ `git add` file mới).
 
@@ -520,10 +520,7 @@
 - [ ] **Step 2: Chạy test, thấy FAIL.**
 - [ ] **Step 3: Viết các file trên.**
 - [ ] **Step 4: Chạy test, thấy PASS.** Run: `flutter analyze && flutter test --exclude-tags live`
-- [ ] **Step 5: Kiểm tra bằng tay trên Windows.** Run: `flutter run -d windows --dart-define=FAKE_SOURCES=true`
-  Expected: thấy 20 bài demo. Gõ `mua` vào ô lọc thì ra "Mưa Tháng Sáu". Kéo thả trong "Chill tối" giữ nguyên thứ tự sau khi khởi động lại app. Dán link YouTube thật vào sheet thì hiện preview "Bài demo …" (bản fake).
-  Run: `flutter run -d windows` (dùng dữ liệu thật). Dán `https://youtu.be/dQw4w9WgXcQ` → preview đúng tên bài thật.
-- [ ] **Step 6: Commit.** `git add -A && git commit -m "feat: wire app shell, router, DI and demo mode"`
+- [ ] **Step 5: Commit.** `git add -A && git commit -m "feat: wire app shell, router, DI and demo mode"`
 
 ---
 
@@ -569,6 +566,9 @@ echo "IPA: build/ipa/multi-musics-$TAG.ipa"
   Expected: workflow `release.yml` xanh. Release `v0.1.0` có file `multi-musics-v0.1.0.ipa`.
 
 - [ ] **Step 7: Người dùng cài lên iPhone (thao tác thủ công, mình hướng dẫn từng bước).** Cài SideStore theo hướng dẫn chính thức tại docs.sidestore.io (cần PC Windows một lần để tạo pairing file, cộng app VPN mà SideStore yêu cầu). Sau đó trong SideStore: **+** → dán URL của IPA trong Release → cài.
-  Expected: mở app Multi Musics trên iPhone, thấy tab Thư viện trống. Dán link YouTube → thêm được. Tạo playlist được. Mở SideStore thấy ngày hết hạn sau 7 ngày.
+  Expected: mở app Multi Musics trên iPhone, thấy tab Thư viện trống. Dán `https://youtu.be/dQw4w9WgXcQ` → preview đúng tên bài thật → thêm được. Gõ `mua` vào ô lọc không lỗi. Tạo playlist, thêm bài, kéo thả sắp xếp → thứ tự giữ nguyên sau khi tắt hẳn rồi mở lại app. Mở SideStore thấy ngày hết hạn sau 7 ngày.
 
-- [ ] **Step 8: Ghi kết quả vào README** (mục "Cài lên iPhone": các bước thực tế đã làm và lỗi gặp phải nếu có), rồi commit `docs: document iPhone install via SideStore`.
+- [ ] **Step 8: Thiết lập vòng dev trên máy thật với ios-builder + MobAI** (dùng từ Kế hoạch 2 trở đi). Cài CLI ios-builder và app MobAI trên Windows theo README của `github.com/MobAI-App/ios-builder`, chọn provider GitHub Actions, cắm cáp iPhone, chạy chế độ hot reload cho Flutter.
+  Expected: sửa một chuỗi chữ trong `SettingsPage` → iPhone cập nhật bằng hot reload, không cần build lại IPA. Lưu ý: bản dev do MobAI ký bằng Apple ID miễn phí cũng chiếm 1 suất trong giới hạn 3 app (SideStore + bản release + bản dev = 3). Nếu vượt giới hạn thì gỡ bản release trong lúc dev.
+
+- [ ] **Step 9: Ghi kết quả vào README** (mục "Cài lên iPhone" và "Dev trên máy thật": các bước thực tế đã làm và lỗi gặp phải nếu có), rồi commit `docs: document iPhone install and device dev loop`.
