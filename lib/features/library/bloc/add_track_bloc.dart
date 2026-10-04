@@ -18,19 +18,13 @@ part 'add_track_state.dart';
 
 class AddTrackBloc extends Bloc<AddTrackEvent, AddTrackState> {
   AddTrackBloc({
-    required LinkParser parser,
-    required MetadataFetcher metadata,
-    required TrackRepository tracks,
-    required LibraryWriter writer,
-    required PlaylistRepository playlists,
-    required AppLogger logger,
-  })  : _parser = parser,
-        _metadata = metadata,
-        _tracks = tracks,
-        _writer = writer,
-        _playlists = playlists,
-        _logger = logger,
-        super(const AddTrackState()) {
+    required this._parser,
+    required this._metadata,
+    required this._tracks,
+    required this._writer,
+    required this._playlists,
+    required this._logger,
+  }) : super(const AddTrackState()) {
     // One event at a time: a toggle or confirm must see the finished preview,
     // and a double-tapped confirm must not save twice.
     on<AddTrackEvent>(
