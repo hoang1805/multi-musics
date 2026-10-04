@@ -129,6 +129,14 @@ void main() {
       expect((result as Err<ParsedLink>).failure, const NetworkFailure());
     });
 
+    test('TLS error (captive portal) becomes NetworkFailure', () async {
+      final parser = LinkParser(
+        httpClient: MockClient((_) async => throw const HandshakeException('portal')),
+      );
+      final result = await parser.parse('https://on.soundcloud.com/abc');
+      expect((result as Err<ParsedLink>).failure, const NetworkFailure());
+    });
+
     test('redirect to unknown host is InvalidLink', () async {
       final parser = LinkParser(
         httpClient: MockClient((_) async =>

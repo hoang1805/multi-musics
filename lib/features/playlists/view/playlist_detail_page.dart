@@ -67,10 +67,13 @@ class _Body extends StatelessWidget {
   Widget build(BuildContext context) {
     final header = _Header(detail: detail);
     if (detail.items.isEmpty) {
-      return Column(
-        children: [
-          header,
-          const Expanded(
+      // Scrollable so the header + empty state still fit at the largest text
+      // sizes.
+      return CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(child: header),
+          const SliverFillRemaining(
+            hasScrollBody: false,
             child: EmptyState(
               icon: LucideIcons.listMusic,
               title: 'Playlist trống',
@@ -163,7 +166,12 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            '${detail.items.length} bài · ${formatTotalDuration(detail.knownDuration)}',
+            [
+              '${detail.items.length} bài',
+              // Unknown until tracks are played (plan 2); don't show "0 phút".
+              if (detail.knownDuration > Duration.zero)
+                formatTotalDuration(detail.knownDuration),
+            ].join(' · '),
             style: text.bodyMedium?.copyWith(color: AppColors.of(context).mutedForeground),
           ),
         ],

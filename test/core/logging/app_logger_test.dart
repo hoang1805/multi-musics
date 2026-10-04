@@ -39,6 +39,16 @@ void main() {
     reopened.dispose();
   });
 
+  test('open survives a log file cut mid-character', () async {
+    final file = File('${tmp.path}/logs.txt');
+    // "Mư" with the 2-byte "ư" (C6 B0) truncated after its first byte.
+    await file.writeAsBytes([...'2026 [I] t: M'.codeUnits, 0xC6]);
+    final logger = await AppLogger.open(file);
+    expect(logger.lines, hasLength(1));
+    expect(logger.lines.single, startsWith('2026 [I] t: M'));
+    logger.dispose();
+  });
+
   test('error includes error text', () {
     final logger = AppLogger.memory();
     logger.error('t', 'm', StateError('boom'));

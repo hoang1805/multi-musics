@@ -22,6 +22,12 @@ class OEmbedClient implements MetadataFetcher {
   static const _unavailable =
       TrackUnavailable('Bài không tồn tại hoặc đang ở chế độ riêng tư');
 
+  /// YouTube oEmbed answers 401/403 for public videos whose owner disabled
+  /// embedding; they become addable once plan 2 reads metadata another way.
+  static const _embedDisabled = TrackUnavailable(
+    'Video này chặn nhúng nên chưa thêm được ở bản này (sẽ hỗ trợ ở bản sau).',
+  );
+
   static Uri endpoint(ParsedLink link) => switch (link.source) {
         SourceType.youtube => Uri.https('www.youtube.com', '/oembed',
             {'format': 'json', 'url': link.canonicalUrl}),
@@ -39,7 +45,8 @@ class OEmbedClient implements MetadataFetcher {
     final http.Response response;
     try {
       response = await _http.get(endpoint(link)).timeout(_timeout);
-    } on SocketException {
+    } on IOException {
+      // SocketException, HandshakeException / TlsException (captive portals), ...
       return const Err(NetworkFailure());
     } on TimeoutException {
       return const Err(NetworkFailure());
@@ -48,6 +55,9 @@ class OEmbedClient implements MetadataFetcher {
     }
 
     final status = response.statusCode;
+    if ((status == 401 || status == 403) && link.source == SourceType.youtube) {
+      return const Err(_embedDisabled);
+    }
     if (status == 401 || status == 403 || status == 404) return const Err(_unavailable);
     if (status >= 500) return const Err(NetworkFailure());
     if (status != 200) return Err(UnknownFailure('oEmbed HTTP $status'));
@@ -63,7 +73,7 @@ class OEmbedClient implements MetadataFetcher {
     if (title is! String || title.isEmpty) {
       return const Err(UnknownFailure('oEmbed response without title'));
     }
-    var artist = link.source == SourceType.spotify ? null : json['author_name'] as String?;
+    var artist = link.source == SourceType.spotify ? null : _string(json['author_name']);
 
     if (link.source == SourceType.youtube && artist != null && artist.endsWith(' - Topic')) {
       artist = artist.substring(0, artist.length - ' - Topic'.length);
@@ -79,7 +89,9 @@ class OEmbedClient implements MetadataFetcher {
       originalUrl: originalUrl,
       title: title,
       artist: artist,
-      artworkUrl: json['thumbnail_url'] as String?,
+      artworkUrl: _string(json['thumbnail_url']),
     ));
   }
+
+  static String? _string(Object? value) => value is String && value.isNotEmpty ? value : null;
 }

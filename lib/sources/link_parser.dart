@@ -78,7 +78,8 @@ class LinkParser {
       final location = response.headers['location'];
       if (location == null) return const Err(InvalidLink());
       return Ok(uri.resolve(location));
-    } on SocketException {
+    } on IOException {
+      // SocketException, HandshakeException / TlsException (captive portals), ...
       return const Err(NetworkFailure());
     } on TimeoutException {
       return const Err(NetworkFailure());

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 
 enum LogLevel {
@@ -67,10 +68,19 @@ class AppLogger {
 
   AppLogger.memory({int capacity = 500}) : this._(null, capacity, const []);
 
+  /// Never throws on a damaged file (e.g. iOS killed the app mid-flush and
+  /// cut a multi-byte character): broken bytes are replaced, unreadable
+  /// files start empty. Logging must not be able to block app start.
   static Future<AppLogger> open(File file, {int capacity = 500}) async {
-    final initial = await file.exists()
-        ? _parseRecords(await file.readAsString())
-        : const <String>[];
+    var initial = const <String>[];
+    try {
+      if (await file.exists()) {
+        final bytes = await file.readAsBytes();
+        initial = _parseRecords(utf8.decode(bytes, allowMalformed: true));
+      }
+    } on FileSystemException {
+      initial = const [];
+    }
     return AppLogger._(file, capacity, initial);
   }
 

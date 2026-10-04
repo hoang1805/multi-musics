@@ -51,7 +51,16 @@ class AddTrackBloc extends Bloc<AddTrackEvent, AddTrackState> {
   ) async {
     emit(const AddTrackState(status: AddTrackStatus.resolving));
     final input = event.input.trim();
+    try {
+      await _resolve(input, emit);
+    } on Object catch (e, st) {
+      // Never leave the sheet stuck in "resolving" with the paste button off.
+      _logger.error('add-track', 'resolve crashed for "$input"', e, st);
+      emit(AddTrackState(status: AddTrackStatus.failure, failure: UnknownFailure(e, st)));
+    }
+  }
 
+  Future<void> _resolve(String input, Emitter<AddTrackState> emit) async {
     final ParsedLink link;
     switch (await _parser.parse(input)) {
       case Ok(:final value):

@@ -19,6 +19,12 @@ void main() {
     expect(foldVietnamese('ÀÁẢÃẠ ỲÝỶỸỴ'), 'aaaaa yyyyy');
   });
 
+  test('handles decomposed (NFD) text: base letter + combining marks', () {
+    // "Mưa Đêm" with ư = u + U+031B, ê = e + U+0302, plus a tone mark.
+    const nfd = 'Mưa Đêm Hạ';
+    expect(foldVietnamese(nfd), 'mua dem ha');
+  });
+
   test('leaves plain ASCII alone except case', () {
     expect(foldVietnamese('Rick Astley 2024'), 'rick astley 2024');
   });

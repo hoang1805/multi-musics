@@ -14,9 +14,11 @@ final Map<int, String> _fold = {
 };
 
 /// Lowercase without Vietnamese diacritics, so "mua" matches "Mưa".
+/// Handles both precomposed and decomposed (base + combining mark) text.
 String foldVietnamese(String s) {
   final buffer = StringBuffer();
   for (final rune in s.toLowerCase().runes) {
+    if (rune >= 0x0300 && rune <= 0x036F) continue; // combining marks
     buffer.write(_fold[rune] ?? String.fromCharCode(rune));
   }
   return buffer.toString();

@@ -46,6 +46,36 @@ void main() {
     expect(find.byKey(const ValueKey(2)), findsOneWidget);
   });
 
+  testWidgets('unknown durations are not shown as "0 phút"', (tester) async {
+    await pump(
+      tester,
+      PlaylistDetailState(
+        status: PlaylistDetailStatus.ready,
+        detail: PlaylistDetail(playlist: playlist, items: [
+          PlaylistItem(entryId: 1, position: 0, track: makeTrack(1)),
+        ]),
+      ),
+    );
+    expect(find.text('1 bài'), findsOneWidget);
+    expect(find.textContaining('phút'), findsNothing);
+  });
+
+  testWidgets('empty playlist fits at the largest text size on iPhone', (tester) async {
+    tester.view.physicalSize = const Size(1242, 2688);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    when(() => bloc.state).thenReturn(PlaylistDetailState(
+      status: PlaylistDetailStatus.ready,
+      detail: PlaylistDetail(playlist: playlist, items: const []),
+    ));
+    await pumpApp(
+      tester,
+      BlocProvider<PlaylistDetailBloc>.value(value: bloc, child: const PlaylistDetailView()),
+      textScale: 3.1,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('empty playlist shows empty state', (tester) async {
     await pump(
       tester,

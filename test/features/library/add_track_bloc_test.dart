@@ -142,6 +142,22 @@ void main() {
   );
 
   blocTest<AddTrackBloc, AddTrackState>(
+    'unexpected exception → failure(UnknownFailure), never stuck in resolving',
+    setUp: () {
+      when(() => metadata.fetch(any(), originalUrl: any(named: 'originalUrl')))
+          .thenThrow(StateError('boom'));
+    },
+    build: build,
+    act: (b) => b.add(const AddTrackLinkSubmitted('https://youtu.be/dQw4w9WgXcQ')),
+    expect: () => [
+      const AddTrackState(status: AddTrackStatus.resolving),
+      isA<AddTrackState>()
+          .having((s) => s.status, 'status', AddTrackStatus.failure)
+          .having((s) => s.failure, 'failure', isA<UnknownFailure>()),
+    ],
+  );
+
+  blocTest<AddTrackBloc, AddTrackState>(
     'toggle twice removes selection',
     build: build,
     seed: () => const AddTrackState(status: AddTrackStatus.preview, draft: ytDraft),

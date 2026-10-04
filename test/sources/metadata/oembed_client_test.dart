@@ -96,9 +96,41 @@ void main() {
     );
   });
 
-  test('401 is TrackUnavailable', () async {
+  test('YouTube 401 means embedding disabled, not deleted', () async {
     final result = await fetchWith(youtube, (_) async => http.Response('', 401));
-    expect(errValue(result), isA<TrackUnavailable>());
+    expect(
+      errValue(result),
+      const TrackUnavailable(
+        'Video này chặn nhúng nên chưa thêm được ở bản này (sẽ hỗ trợ ở bản sau).',
+      ),
+    );
+  });
+
+  test('SoundCloud 401 is TrackUnavailable (private)', () async {
+    final result = await fetchWith(soundcloud, (_) async => http.Response('', 401));
+    expect(
+      errValue(result),
+      const TrackUnavailable('Bài không tồn tại hoặc đang ở chế độ riêng tư'),
+    );
+  });
+
+  test('TLS error is NetworkFailure', () async {
+    final result = await fetchWith(
+      youtube,
+      (_) async => throw const HandshakeException('portal'),
+    );
+    expect(errValue(result), const NetworkFailure());
+  });
+
+  test('non-string optional fields are ignored, not a crash', () async {
+    final result = await fetchWith(
+      youtube,
+      (_) async => http.Response('{"title":"T","author_name":42,"thumbnail_url":null}', 200),
+    );
+    final draft = okValue(result);
+    expect(draft.title, 'T');
+    expect(draft.artist, isNull);
+    expect(draft.artworkUrl, isNull);
   });
 
   test('503 is NetworkFailure', () async {
