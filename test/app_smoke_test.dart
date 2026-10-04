@@ -5,25 +5,26 @@ import 'package:multi_musics/app_dependencies.dart';
 import 'package:multi_musics/core/logging/app_logger.dart';
 import 'package:multi_musics/core/widgets/track_tile.dart';
 
-import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-
-import 'helpers/fake_path_provider.dart';
 import 'helpers/test_database.dart';
 
 void main() {
-  setUpAll(() => PathProviderPlatform.instance = FakePathProvider());
-
   testWidgets('demo app: library, playlists tab, playlist detail', (tester) async {
     // iPhone XS Max logical size.
     tester.view.physicalSize = const Size(1242, 2688);
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
 
-    final deps = (await tester.runAsync(() => AppDependencies.create(
-          fake: true,
-          logger: AppLogger.memory(),
-          db: openTestDatabase(),
-        )))!;
+    final deps = (await tester.runAsync(() async {
+      final deps = await AppDependencies.create(
+        fake: true,
+        logger: AppLogger.memory(),
+        db: openTestDatabase(),
+      );
+      // No network images in tests: the image cache needs platform plugins
+      // (sqflite on macOS/iOS) that do not exist under flutter_test.
+      await deps.db.customStatement('UPDATE tracks SET artwork_url = NULL');
+      return deps;
+    }))!;
 
     Future<void> settle() async {
       for (var i = 0; i < 10; i++) {
@@ -47,10 +48,9 @@ void main() {
     expect(find.textContaining(RegExp(r'^\d+ bài · ')), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
-    // Let fake-zone timers fire before closing the database (drift stream
-    // cleanup; otherwise close() waits forever) and before the test ends
-    // (flutter_cache_manager schedules a 10 s cleanup).
-    await tester.pump(const Duration(seconds: 11));
+    // Let drift's stream-cleanup timers (fake zone) fire before closing the
+    // database, otherwise close() waits forever.
+    await tester.pump(const Duration(seconds: 1));
     await tester.runAsync(deps.dispose);
   });
 }
