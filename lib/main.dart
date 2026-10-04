@@ -5,7 +5,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'app.dart';
+import 'app_dependencies.dart';
 import 'core/logging/app_logger.dart';
+
+const _fakeSources = bool.fromEnvironment('FAKE_SOURCES');
 
 Future<void> main() async {
   late final AppLogger logger;
@@ -27,7 +31,8 @@ Future<void> main() async {
     };
     AppLifecycleListener(onPause: () => unawaited(logger.flush()));
 
-    runApp(const MaterialApp(home: Scaffold()));
+    final deps = await AppDependencies.create(fake: _fakeSources, logger: logger);
+    runApp(MultiMusicsApp(deps));
   }, (error, stack) {
     logger.error('crash', 'Zone', error, stack);
   });

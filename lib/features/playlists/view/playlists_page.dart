@@ -86,25 +86,35 @@ class _PlaylistCell extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(AppSpacing.radiusCard),
-      child: LayoutBuilder(
-        builder: (context, constraints) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            PlaylistCover(artworks: summary.coverArtworks, size: constraints.maxWidth),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              summary.playlist.name,
-              style: text.titleMedium,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // The cover takes whatever the text leaves, so larger text sizes
+          // shrink the artwork instead of overflowing the cell.
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) => Align(
+                alignment: Alignment.topLeft,
+                child: PlaylistCover(
+                  artworks: summary.coverArtworks,
+                  size: constraints.biggest.shortestSide,
+                ),
+              ),
             ),
-            Text(
-              '${summary.trackCount} bài',
-              style: text.bodyMedium?.copyWith(color: AppColors.of(context).mutedForeground),
-              maxLines: 1,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            summary.playlist.name,
+            style: text.titleMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          Text(
+            '${summary.trackCount} bài',
+            style: text.bodyMedium?.copyWith(color: AppColors.of(context).mutedForeground),
+            maxLines: 1,
+          ),
+        ],
       ),
     );
   }

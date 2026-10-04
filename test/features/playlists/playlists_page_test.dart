@@ -55,6 +55,21 @@ void main() {
     expect(opened, 1);
   });
 
+  testWidgets('grid cells do not overflow on iPhone width at 2x text', (tester) async {
+    tester.view.physicalSize = const Size(1242, 2688);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    when(() => bloc.state).thenReturn(
+      PlaylistsState(status: PlaylistsStatus.ready, playlists: [summary(1), summary(2)]),
+    );
+    await pumpApp(
+      tester,
+      BlocProvider<PlaylistsBloc>.value(value: bloc, child: PlaylistsPage(onOpen: (_) {})),
+      textScale: 2,
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('create dialog sends PlaylistsCreated', (tester) async {
     await pump(tester, const PlaylistsState(status: PlaylistsStatus.ready));
     await tester.tap(find.byTooltip('Tạo playlist'));
